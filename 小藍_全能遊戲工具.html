@@ -1,0 +1,1662 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>小藍你好</title>
+  <style>
+    :root {
+      --accent: #ff8a4b;
+      --accent-dark: #e06d2e;
+      --bg: #1a1a2e;
+      --card-bg: #16213e;
+      --panel-bg: #0f3460;
+      --ink: #e0e0e0;
+      --ink-dim: #aaa;
+      --success: #4CAF50;
+      --warning: #FF9800;
+      --error: #F44336;
+      --tab-active: #ff8a4b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      font-family: "Microsoft JhengHei", "Heiti TC", "Noto Sans TC", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      overflow: hidden;
+    }
+
+    /* ===== MAIN LAYOUT ===== */
+    .app-wrapper {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    /* ===== HEADER ===== */
+    .app-header {
+      background: linear-gradient(135deg, #ff8a4b 0%, #e8562a 100%);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      box-shadow: 0 4px 20px rgba(255,138,75,0.4);
+    }
+
+    .app-header h1 {
+      font-size: 20px;
+      font-weight: 900;
+      color: white;
+      letter-spacing: 2px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .header-face {
+      width: 48px;
+      height: 32px;
+    }
+
+    /* ===== TAB NAV ===== */
+    .nav-tabs {
+      display: flex;
+      background: var(--card-bg);
+      border-bottom: 2px solid #0a2040;
+      flex-shrink: 0;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 12px 6px;
+      border: none;
+      background: transparent;
+      color: var(--ink-dim);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: bold;
+      transition: all 0.3s;
+      border-bottom: 3px solid transparent;
+      font-family: inherit;
+    }
+
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+      background: rgba(255,138,75,0.08);
+    }
+
+    .tab-btn:hover:not(.active) {
+      color: var(--ink);
+      background: rgba(255,255,255,0.04);
+    }
+
+    /* ===== CONTENT AREA ===== */
+    .content-area {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tab-panel {
+      position: absolute;
+      inset: 0;
+      overflow-y: auto;
+      display: none;
+      padding: 16px;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .tab-panel.active { display: flex; flex-direction: column; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ===== SCROLLBAR ===== */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+
+    /* ===== 小藍 FACE PANEL ===== */
+    #panel-chuhyi {
+      gap: 12px;
+    }
+
+    .face-area {
+      flex-shrink: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 150px;
+      max-height: 180px;
+      position: relative;
+    }
+
+    .face-card {
+      width: 100%;
+      max-width: 340px;
+      height: 160px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(255,138,75,0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .face-card svg { width: 100%; height: 100%; }
+    .face-card svg circle, .face-card svg ellipse { stroke: none !important; }
+
+    .toggle-fullface {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background: rgba(0,0,0,0.15);
+      border: none;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+      color: #333;
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 5;
+    }
+
+    /* Face fullscreen mode */
+    .face-fullscreen-overlay {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      z-index: 500;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .face-fullscreen-overlay.active { display: flex; }
+    .face-fullscreen-overlay svg { width: 90vw; max-width: 500px; height: auto; }
+    .face-fullscreen-overlay .close-fs {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(255,255,255,0.15);
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      font-size: 18px;
+      color: white;
+      cursor: pointer;
+    }
+
+    /* ===== CHAT CARD ===== */
+    .chat-card {
+      background: var(--card-bg);
+      border-radius: 14px;
+      padding: 14px;
+      border: 1px solid #1a2a4a;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 0;
+    }
+
+    .interaction-bar {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .ibtn {
+      background: rgba(255,138,75,0.12);
+      color: #ff9a5c;
+      border: 1px solid rgba(255,138,75,0.3);
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .ibtn:hover { background: rgba(255,138,75,0.25); }
+
+    .settings-toggle-panel {
+      background: rgba(0,0,0,0.2);
+      border-radius: 10px;
+      padding: 10px;
+      display: none;
+      border: 1px solid #1a3060;
+    }
+
+    .settings-toggle-panel.active { display: block; }
+
+    .setting-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 12px;
+      color: var(--ink-dim);
+    }
+
+    .setting-row:last-child { border-bottom: none; }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 40px;
+      height: 22px;
+    }
+
+    .switch input { opacity: 0; width: 0; height: 0; }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background: #444;
+      border-radius: 22px;
+      transition: .3s;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      bottom: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: .3s;
+    }
+
+    input:checked + .slider { background: var(--accent); }
+    input:checked + .slider:before { transform: translateX(18px); }
+
+    .memory-display {
+      background: rgba(0,0,0,0.2);
+      border-radius: 8px;
+      padding: 8px 10px;
+      max-height: 100px;
+      overflow-y: auto;
+      border: 1px solid rgba(255,138,75,0.15);
+    }
+
+    .memory-display .mem-title { font-size: 11px; color: var(--accent); margin-bottom: 6px; font-weight: bold; }
+
+    .mem-item {
+      font-size: 11px;
+      color: var(--ink-dim);
+      padding: 3px 6px;
+      background: rgba(255,138,75,0.06);
+      border-radius: 5px;
+      border-left: 2px solid var(--accent);
+      margin-bottom: 3px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .mem-item .ts { font-size: 9px; color: #666; }
+
+    .input-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: var(--ink-dim);
+    }
+
+    .btn-group { display: flex; gap: 5px; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 5px 9px;
+      border-radius: 7px;
+      border: none;
+      background: var(--accent);
+      color: white;
+      cursor: pointer;
+      font-size: 11px;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+
+    .btn:hover { background: var(--accent-dark); }
+    .btn.sec { background: #2a3a5a; color: var(--ink-dim); }
+    .btn.sec:hover { background: #3a4a6a; color: var(--ink); }
+
+    textarea {
+      width: 100%;
+      min-height: 55px;
+      max-height: 75px;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid #2a3a5a;
+      background: rgba(0,0,0,0.25);
+      color: var(--ink);
+      font-size: 13px;
+      resize: vertical;
+      font-family: inherit;
+    }
+
+    textarea:focus { outline: none; border-color: var(--accent); }
+    textarea::placeholder { color: #556; }
+
+    .quick-cmds {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+
+    .qcmd {
+      background: #1e2d48;
+      color: #8aa;
+      border: 1px solid #2a3a5a;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .qcmd:hover { background: #2a3a5a; color: var(--ink); }
+
+    .action-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .rec-status { flex: 1; text-align: right; font-size: 10px; color: #667; }
+
+    .keywords-row {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      min-height: 18px;
+    }
+
+    .kw-tag {
+      background: rgba(255,138,75,0.2);
+      color: var(--accent);
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-size: 10px;
+      border: 1px solid rgba(255,138,75,0.3);
+    }
+
+    .reply-box {
+      flex: 1;
+      background: rgba(0,0,0,0.25);
+      border-radius: 8px;
+      border: 1px solid #1a2a4a;
+      padding: 10px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--ink);
+      overflow-y: auto;
+      min-height: 70px;
+    }
+
+    .device-status-bar {
+      font-size: 10px;
+      color: #556;
+      text-align: center;
+      padding-top: 4px;
+    }
+
+    /* ===== EXPRESSION ANIMATIONS ===== */
+    @keyframes happy-pulse {
+      0%,100% { transform: scale(1); } 50% { transform: scale(1.08); }
+    }
+    @keyframes sad-pulse {
+      0%,100% { transform: scale(1); } 50% { transform: scale(0.95); }
+    }
+    @keyframes surprised-pulse {
+      0%,100% { transform: scale(1); } 50% { transform: scale(1.15); }
+    }
+    @keyframes angry-pulse {
+      0%,100% { transform: scale(1); }
+      25% { transform: scale(1.1) rotate(-4deg); }
+      75% { transform: scale(1.1) rotate(4deg); }
+    }
+    @keyframes dizzy-rotate {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(1080deg); }
+    }
+    @keyframes blush-sway {
+      0%,100% { transform: translateX(0); opacity: 0.7; }
+      33% { transform: translateX(-2px); opacity: 0.9; }
+      66% { transform: translateX(2px); opacity: 0.9; }
+    }
+
+    .expr-happy { animation: happy-pulse 2s ease-in-out infinite; }
+    .expr-sad { animation: sad-pulse 2s ease-in-out infinite; }
+    .expr-surprised { animation: surprised-pulse 0.8s ease-in-out; }
+    .expr-angry { animation: angry-pulse 0.5s ease-in-out infinite; }
+    .blush-anim { animation: blush-sway 1.5s ease-in-out; }
+
+    /* ===== CAMP GAME PANEL ===== */
+    #panel-camp { gap: 14px; }
+
+    .camp-scene {
+      background: url('https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?auto=format&fit=crop&w=1000&q=80') center/cover;
+      border-radius: 14px;
+      min-height: 200px;
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .camp-scene::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 60%);
+      border-radius: 14px;
+    }
+
+    .status-panel {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(10,20,40,0.85);
+      backdrop-filter: blur(6px);
+      padding: 12px;
+      border-radius: 10px;
+      border-left: 4px solid var(--accent);
+      min-width: 140px;
+      font-size: 12px;
+    }
+
+    .status-panel .s-item { margin: 4px 0; font-weight: bold; color: var(--ink); }
+
+    .car-emoji {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 75px;
+      cursor: pointer;
+      filter: drop-shadow(0 8px 8px rgba(0,0,0,0.5));
+      transition: all 0.6s cubic-bezier(0.175,0.885,0.32,1.275);
+      user-select: none;
+    }
+
+    .car-emoji:active { transform: translateX(-50%) scale(0.9); }
+    .car-emoji.away { opacity: 0; transform: translateX(500px) scale(0.5); }
+
+    .car-desc {
+      position: absolute;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.75);
+      color: white;
+      padding: 4px 14px;
+      border-radius: 16px;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    /* Camp sub-tabs */
+    .camp-nav {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .camp-tab-btn {
+      background: #1e2d48;
+      border: 1px solid #2a3a5a;
+      color: var(--ink-dim);
+      padding: 7px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: bold;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .camp-tab-btn.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
+    .camp-sub-panel { display: none; }
+    .camp-sub-panel.active { display: block; animation: fadeIn 0.3s; }
+
+    /* Supply grid */
+    .supply-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .supply-plot {
+      background: var(--card-bg);
+      border: 2px solid #2a3a5a;
+      border-radius: 10px;
+      height: 85px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 10px;
+      color: var(--ink-dim);
+    }
+
+    .supply-plot:hover { border-color: var(--accent); transform: translateY(-2px); }
+
+    .supply-plot.busy { background: rgba(255,138,75,0.05); border-color: #3a4a6a; }
+    .supply-plot.ready {
+      background: rgba(255,213,79,0.08);
+      border-color: #ffd54f;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(255,213,79,0.5); }
+      70% { box-shadow: 0 0 0 8px rgba(255,213,79,0); }
+      100% { box-shadow: 0 0 0 0 rgba(255,213,79,0); }
+    }
+
+    /* Shop items */
+    .shop-list { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+
+    .shop-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--card-bg);
+      border: 1px solid #2a3a5a;
+      border-radius: 10px;
+      padding: 12px;
+      transition: all 0.2s;
+    }
+
+    .shop-item:hover:not(.owned) { border-color: var(--accent); cursor: pointer; }
+    .shop-item.owned { opacity: 0.6; border-left: 4px solid #556; }
+
+    .shop-icon { font-size: 28px; }
+
+    .shop-info { flex: 1; }
+    .shop-info b { font-size: 13px; color: var(--ink); }
+    .shop-info p { font-size: 11px; color: var(--ink-dim); margin-top: 2px; }
+    .shop-info .price { color: var(--accent); font-size: 13px; font-weight: bold; margin-top: 3px; }
+
+    .buy-btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+
+    .buy-btn:hover { background: var(--accent-dark); }
+
+    /* Album */
+    .album-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .album-card {
+      background: var(--card-bg);
+      border: 1px solid #2a3a5a;
+      border-radius: 10px;
+      padding: 14px 8px;
+      text-align: center;
+    }
+
+    .album-card .aicon { font-size: 32px; }
+    .album-card .aname { font-size: 12px; font-weight: bold; margin-top: 6px; color: var(--ink); }
+    .album-card .adate { font-size: 10px; color: #556; margin-top: 3px; }
+
+    /* Camp controls */
+    .camp-controls {
+      background: var(--card-bg);
+      border: 1px solid #2a3a5a;
+      border-radius: 10px;
+      padding: 14px;
+      margin-top: 10px;
+    }
+
+    .camp-controls p { font-size: 13px; color: var(--ink-dim); margin-bottom: 12px; }
+
+    .btn-action {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      font-family: inherit;
+      font-size: 13px;
+      transition: all 0.2s;
+      margin-right: 8px;
+    }
+
+    .btn-action:hover { background: var(--accent-dark); }
+    .btn-action:disabled { background: #445; cursor: not-allowed; }
+    .btn-action.danger { background: #4a2a2a; }
+    .btn-action.danger:hover { background: #6a3a3a; }
+
+    .camp-tips {
+      margin-top: 14px;
+      font-size: 12px;
+      color: #556;
+      line-height: 1.8;
+    }
+
+    /* ===== NOTIFICATION ===== */
+    .notif-bar {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-80px);
+      background: rgba(10,20,40,0.95);
+      backdrop-filter: blur(8px);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 24px;
+      font-size: 13px;
+      z-index: 999;
+      border: 1px solid rgba(255,138,75,0.3);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      transition: transform 0.3s ease;
+      white-space: nowrap;
+    }
+
+    .notif-bar.show { transform: translateX(-50%) translateY(0); }
+
+    /* ===== CAMERA ===== */
+    .camera-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 800;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+    }
+
+    .camera-overlay.active { display: flex; }
+
+    .camera-overlay video {
+      width: 90%;
+      max-width: 420px;
+      border-radius: 12px;
+      border: 2px solid var(--accent);
+    }
+
+    .close-cam-btn {
+      background: rgba(255,255,255,0.1);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.3);
+      padding: 8px 20px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 13px;
+      font-family: inherit;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 500px) {
+      .tab-btn { font-size: 10px; padding: 10px 3px; }
+      .supply-grid { grid-template-columns: repeat(5, 1fr); gap: 5px; }
+      .supply-plot { height: 65px; font-size: 9px; }
+      .album-grid { grid-template-columns: repeat(3, 1fr); }
+      .camp-scene { min-height: 160px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- GLOBAL NOTIFICATION BAR -->
+  <div class="notif-bar" id="notifBar"></div>
+
+  <!-- CAMERA OVERLAY -->
+  <div class="camera-overlay" id="cameraOverlay">
+    <video id="cameraVideo" autoplay playsinline></video>
+    <canvas id="motionCanvas" style="display:none;"></canvas>
+    <button class="close-cam-btn" id="closeCamBtn">❌ 關閉相機</button>
+  </div>
+
+  <!-- FACE FULLSCREEN -->
+  <div class="face-fullscreen-overlay" id="faceFullscreen">
+    <button class="close-fs" id="closeFsBtn">✕</button>
+    <svg viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg" id="bigFaceSvg">
+      <rect x="0" y="0" width="320" height="200" rx="18" fill="#fff"/>
+      <g id="bf-left-eye"><circle cx="95" cy="110" r="32" fill="#fff"/><circle id="bf-lpupil" cx="95" cy="110" r="14" fill="#111"/></g>
+      <g id="bf-right-eye"><circle cx="225" cy="110" r="32" fill="#fff"/><circle id="bf-rpupil" cx="225" cy="110" r="14" fill="#111"/></g>
+      <ellipse id="bf-left-blush" cx="40" cy="132" rx="24" ry="14" fill="#ff8a4b" opacity="0.7"/>
+      <ellipse id="bf-right-blush" cx="280" cy="132" rx="24" ry="14" fill="#ff8a4b" opacity="0.7"/>
+    </svg>
+  </div>
+
+  <!-- FILE INPUT -->
+  <input type="file" id="importFile" accept=".json" style="display:none;">
+
+  <!-- APP WRAPPER -->
+  <div class="app-wrapper">
+
+    <!-- HEADER -->
+    <div class="app-header">
+      <div>
+        <h1>小藍你好</h1>
+        <div style="font-size:11px; color:rgba(255,255,255,0.7); margin-top:2px;">智慧互動 × 露營冒險</div>
+      </div>
+      <svg class="header-face" viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg">
+        <rect x="0" y="0" width="320" height="200" rx="18" fill="rgba(255,255,255,0.9)"/>
+        <circle cx="95" cy="110" r="28" fill="#fff"/>
+        <circle cx="95" cy="110" r="12" fill="#111"/>
+        <circle cx="225" cy="110" r="28" fill="#fff"/>
+        <circle cx="225" cy="110" r="12" fill="#111"/>
+        <ellipse cx="40" cy="132" rx="22" ry="12" fill="#ff8a4b" opacity="0.7"/>
+        <ellipse cx="280" cy="132" rx="22" ry="12" fill="#ff8a4b" opacity="0.7"/>
+      </svg>
+    </div>
+
+    <!-- NAV TABS -->
+    <div class="nav-tabs">
+      <button class="tab-btn active" onclick="switchTab('chuhyi', this)">😊 小藍互動</button>
+      <button class="tab-btn" onclick="switchTab('camp', this)">🏕️ 露營基地</button>
+      <button class="tab-btn" onclick="switchTab('supplies', this)">⛽ 燃料補給</button>
+      <button class="tab-btn" onclick="switchTab('garage', this)">🛠️ 車庫改裝</button>
+      <button class="tab-btn" onclick="switchTab('album', this)">📸 探索足跡</button>
+      <button class="tab-btn" onclick="switchTab('campsys', this)">⚙️ 系統</button>
+    </div>
+
+    <!-- CONTENT AREA -->
+    <div class="content-area">
+
+      <!-- ===== 小藍 互動分頁 ===== -->
+      <div id="panel-chuhyi" class="tab-panel active">
+
+        <!-- Face -->
+        <div class="face-area">
+          <div class="face-card" id="faceCard">
+            <button class="toggle-fullface" id="toggleFsBtn" title="全螢幕臉">⛶</button>
+            <svg viewBox="0 0 320 200" xmlns="http://www.w3.org/2000/svg" id="faceSvg">
+              <defs>
+                <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="2" result="b"/>
+                  <feBlend in="SourceGraphic" in2="b" mode="normal"/>
+                </filter>
+              </defs>
+              <rect x="0" y="0" width="320" height="200" rx="18" fill="#fff"/>
+              <g id="left-eye"><circle cx="95" cy="110" r="32" fill="#fff"/><circle id="lpupil" cx="95" cy="110" r="14" fill="#111"/></g>
+              <g id="right-eye"><circle cx="225" cy="110" r="32" fill="#fff"/><circle id="rpupil" cx="225" cy="110" r="14" fill="#111"/></g>
+              <ellipse id="left-blush" cx="40" cy="132" rx="24" ry="14" fill="#ff8a4b" opacity="0.7"/>
+              <ellipse id="right-blush" cx="280" cy="132" rx="24" ry="14" fill="#ff8a4b" opacity="0.7"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Chat / Controls -->
+        <div class="chat-card">
+
+          <div class="interaction-bar">
+            <button class="ibtn" data-action="motion">📷 動作偵測</button>
+            <button class="ibtn" data-action="stop">⏹ 停止偵測</button>
+            <button class="ibtn" data-action="settings" id="settingsBtnMain">⚙️ 設定</button>
+            <button class="ibtn" data-action="exportData">📥 匯出記憶</button>
+            <button class="ibtn" data-action="importData">📤 匯入記憶</button>
+          </div>
+
+          <!-- Settings Panel -->
+          <div class="settings-toggle-panel" id="settingsPanel">
+            <div class="setting-row">
+              <span>語音回饋</span>
+              <label class="switch"><input type="checkbox" id="voiceFeedback" checked><span class="slider"></span></label>
+            </div>
+            <div class="setting-row">
+              <span>眼球追蹤</span>
+              <label class="switch"><input type="checkbox" id="eyeTracking" checked><span class="slider"></span></label>
+            </div>
+            <div class="setting-row">
+              <span>記憶功能</span>
+              <label class="switch"><input type="checkbox" id="memoryEnabled" checked><span class="slider"></span></label>
+            </div>
+            <div class="setting-row">
+              <span>搖晃偵測</span>
+              <label class="switch"><input type="checkbox" id="shakeDetection" checked><span class="slider"></span></label>
+            </div>
+          </div>
+
+          <!-- Memory Panel -->
+          <div class="memory-display" id="memoryDisplay">
+            <div class="mem-title">📝 近期記憶</div>
+            <div id="memoryList"><div style="font-size:11px;color:#556;">暫無記憶</div></div>
+          </div>
+
+          <!-- Input -->
+          <div>
+            <div class="input-header-row">
+              <strong style="font-size:12px;">輸入訊息（文字 / 語音）</strong>
+              <div class="btn-group">
+                <button class="btn" id="recBtn">🎙️ 語音</button>
+                <button class="btn sec" id="stopRecBtn">■ 停止</button>
+              </div>
+            </div>
+            <textarea id="textIn" placeholder="輸入你想問 小藍 的話..." style="margin-top:6px;"></textarea>
+          </div>
+
+          <div class="quick-cmds">
+            <button class="qcmd" data-cmd="time">現在幾點？</button>
+            <button class="qcmd" data-cmd="greeting">您好</button>
+            <button class="qcmd" data-cmd="intro">介紹一下</button>
+            <button class="qcmd" data-cmd="chatgpt">問問 GPT</button>
+            <button class="qcmd" data-cmd="memory">查看記憶</button>
+          </div>
+
+          <div class="action-row">
+            <button class="btn" id="sendBtn">送出</button>
+            <button class="btn sec" id="speakBtn">🔊 播放</button>
+            <button class="btn sec" id="clearBtn">🗑️ 清除</button>
+            <div class="rec-status">語音：<span id="recStatus">未啟動</span></div>
+          </div>
+
+          <div class="keywords-row" id="keywordsRow"></div>
+
+          <div class="reply-box" id="robotReply">機器人等待使用者輸入...</div>
+
+          <div class="device-status-bar">
+            方向: <span id="orientStatus">等待</span> ｜ 動作: <span id="motionStatusEl">等待</span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ===== 露營基地分頁 ===== -->
+      <div id="panel-camp" class="tab-panel">
+        <div class="camp-scene">
+          <div class="status-panel">
+            <div class="s-item">⛽ 燃料：<span id="fuelCount">0</span></div>
+            <div class="s-item">💰 資金：<span id="moneyCount">100</span></div>
+            <div class="s-item">🚩 造訪：<span id="visitCount">0</span></div>
+            <div id="carStatus" style="margin-top:6px; color:var(--accent); font-size:11px;">狀態：準備中</div>
+          </div>
+          <div id="mazda5Car" class="car-emoji" onclick="tapCar()">🚐</div>
+          <div id="carDesc" class="car-desc">MAZDA5：原廠式樣</div>
+        </div>
+        <p style="font-size:12px; color:#667; text-align:center;">點擊 MAZDA5 進行小保養賺取資金 💪 出發需到「系統」頁面</p>
+      </div>
+
+      <!-- ===== 燃料補給分頁 ===== -->
+      <div id="panel-supplies" class="tab-panel">
+        <h3 style="margin-bottom:6px; font-size:15px;">⛽ 燃料補給站</h3>
+        <p style="font-size:12px; color:#667; margin-bottom:12px;">點擊空格開始補給，10秒後出現 ⛽ 可採收！</p>
+        <div class="supply-grid" id="supplyGrid"></div>
+      </div>
+
+      <!-- ===== 車庫改裝分頁 ===== -->
+      <div id="panel-garage" class="tab-panel">
+        <h3 style="margin-bottom:6px; font-size:15px;">🛠️ MAZDA5 改裝配件</h3>
+        <div class="shop-list" id="shopList"></div>
+      </div>
+
+      <!-- ===== 探索足跡分頁 ===== -->
+      <div id="panel-album" class="tab-panel">
+        <h3 style="margin-bottom:6px; font-size:15px;">📸 露營足跡相簿</h3>
+        <div class="album-grid" id="photoGrid"></div>
+      </div>
+
+      <!-- ===== 系統設定分頁 ===== -->
+      <div id="panel-campsys" class="tab-panel">
+        <h3 style="margin-bottom:12px; font-size:15px;">⚙️ 遊戲控制面板</h3>
+        <div class="camp-controls">
+          <p>準備好出發了嗎？每次探索消耗 <b>5 單位燃料</b>，請先在補給站收集燃料。</p>
+          <button class="btn-action" id="travelBtn" onclick="sendToCamp()">🚀 出發前往秘境</button>
+          <button class="btn-action danger" onclick="resetCampGame()">🧹 重置進度</button>
+        </div>
+        <div class="camp-tips">
+          💡 提示：<br>
+          ・點擊基地畫面的 MAZDA5 進行小保養賺取資金。<br>
+          ・不同天氣會影響探索獎金加成（最高 1.5×）。<br>
+          ・購買改裝品可解鎖車輛描述變化。<br>
+          ・小藍也會為你的露營旅程加油打氣！
+        </div>
+      </div>
+
+    </div><!-- content-area -->
+  </div><!-- app-wrapper -->
+
+<script>
+  // ======================================================
+  //  TAB NAVIGATION
+  // ======================================================
+  function switchTab(id, btn) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('panel-' + id).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  // ======================================================
+  //  CAMP GAME STATE
+  // ======================================================
+  let campState = {
+    fuel: 0,
+    money: 100,
+    ownedItems: [],
+    visitedPlaces: [],
+    isTraveling: false,
+    plots: Array(15).fill(0).map(() => ({ status: 0, time: null }))
+  };
+
+  const shopItems = {
+    mattress:   { name: "全平整化床墊",         price: 200,  icon: "🛌", desc: "專為 MAZDA5 空間裁切，車中泊必備。" },
+    karrakuri:  { name: "Karrakuri 隱藏桌模組", price: 500,  icon: "🍱", desc: "解鎖二排中間座椅的隱藏變形功能。" },
+    slideScreen:{ name: "側滑門專用紗窗",       price: 350,  icon: "🕸️", desc: "享受自然風而不受蚊蟲騷擾。" },
+    fridge:     { name: "車用壓縮機冰箱",       price: 800,  icon: "❄️", desc: "夏天在營地也能喝到冰涼的可樂。" },
+    roofBox:    { name: "車頂行李箱（書包）",   price: 1200, icon: "🎒", desc: "大幅擴充載物空間，視覺帥氣度加倍。" },
+    awning:     { name: "連結式車尾帳",         price: 1800, icon: "⛺", desc: "車帳合一，打造完美的移動客廳。" }
+  };
+
+  const campLocations = [
+    { name: "武陵農場", icon: "🏔️" },
+    { name: "拉拉山巨木林", icon: "🌲" },
+    { name: "日月潭湖畔營地", icon: "🛶" },
+    { name: "墾丁大草原", icon: "☀️" },
+    { name: "阿里山雲海營區", icon: "☁️" },
+    { name: "宜蘭大同鄉溪邊", icon: "🌊" }
+  ];
+
+  // ===== SUPPLY GRID =====
+  function initSupplies() {
+    const grid = document.getElementById('supplyGrid');
+    grid.innerHTML = '';
+    campState.plots.forEach((p, i) => {
+      const div = document.createElement('div');
+      div.className = 'supply-plot' + (p.status === 2 ? ' ready' : p.status === 1 ? ' busy' : '');
+      if (p.status === 2) div.innerHTML = `<span style="font-size:26px">⛽</span><small style="margin-top:4px">點擊採收</small>`;
+      else if (p.status === 1) div.innerHTML = `<span style="font-size:22px">⌛</span><small style="margin-top:4px">補給中</small>`;
+      else div.innerHTML = `<span style="font-size:22px;color:#334">➕</span>`;
+      div.onclick = () => handlePlot(i);
+      grid.appendChild(div);
+    });
+  }
+
+  function handlePlot(i) {
+    if (campState.plots[i].status === 0) {
+      campState.plots[i].status = 1;
+      campState.plots[i].time = Date.now();
+      showNotif("⛽ 開始灌注燃料...");
+    } else if (campState.plots[i].status === 2) {
+      const gain = Math.floor(Math.random() * 3) + 2;
+      campState.fuel += gain;
+      campState.plots[i].status = 0;
+      showNotif(`補給完成！燃料 +${gain} ⛽`);
+      updateCampUI();
+    }
+    initSupplies();
+  }
+
+  // ===== CAR TAP =====
+  function tapCar() {
+    if (campState.isTraveling) return;
+    campState.money += 2;
+    const car = document.getElementById('mazda5Car');
+    car.style.transform = 'translateX(-50%) scale(0.88)';
+    setTimeout(() => { car.style.transform = 'translateX(-50%) scale(1)'; }, 120);
+    showNotif('🚗 手動清潔車體，獲得資金 $2');
+    updateCampUI();
+
+    // 小藍 reaction
+    expressionSystem.setExpression('happy');
+    setTimeout(() => expressionSystem.setExpression('normal'), 2000);
+    const msgs = ['加油！好棒！', '乾淨的車最帥！', '繼續努力！'];
+    const m = msgs[Math.floor(Math.random() * msgs.length)];
+    speakText(m);
+  }
+
+  // ===== TRAVEL =====
+  function sendToCamp() {
+    if (campState.fuel < 5) { showNotif("❌ 燃料不足 5 單位，快去補給！"); return; }
+    if (campState.isTraveling) return;
+    campState.fuel -= 5;
+    campState.isTraveling = true;
+    document.getElementById('mazda5Car').classList.add('away');
+    updateCampUI();
+    showNotif("🚗 MAZDA5 出發！滑開側門，啟程！");
+    speakText('加油加油！平安出發，滿載而歸！');
+    expressionSystem.setExpression('surprised');
+
+    const weathers = [
+      { type: "晴空萬里", bonus: 1.0, msg: "好天氣！視野極佳。" },
+      { type: "壯闊雲海", bonus: 1.5, msg: "稀有雲海，加成 50%！" },
+      { type: "朦朧煙雨", bonus: 0.8, msg: "雨天辛苦了，收帳不易。" }
+    ];
+
+    setTimeout(() => {
+      campState.isTraveling = false;
+      document.getElementById('mazda5Car').classList.remove('away');
+      const loc = campLocations[Math.floor(Math.random() * campLocations.length)];
+      const weather = weathers[Math.floor(Math.random() * weathers.length)];
+      const base = 100 + Math.floor(Math.random() * 100);
+      const final = Math.floor(base * weather.bonus);
+      campState.money += final;
+      if (!campState.visitedPlaces.find(p => p.name === loc.name)) {
+        campState.visitedPlaces.push({ ...loc, date: new Date().toLocaleDateString() });
+      }
+      showNotif(`⛺ 到達【${loc.name}】！${weather.msg} 獲得 $${final}`);
+      expressionSystem.setExpression('happy');
+      speakText(`太棒了！到達${loc.name}！獲得 ${final} 元！`);
+      updateCampUI();
+      renderAlbum();
+    }, 5000);
+  }
+
+  // ===== SHOP =====
+  function renderShop() {
+    const list = document.getElementById('shopList');
+    list.innerHTML = '';
+    for (let id in shopItems) {
+      const item = shopItems[id];
+      const owned = campState.ownedItems.includes(id);
+      const div = document.createElement('div');
+      div.className = 'shop-item' + (owned ? ' owned' : '');
+      div.innerHTML = `
+        <div class="shop-icon">${item.icon}</div>
+        <div class="shop-info">
+          <b>${item.name}</b>
+          <p>${item.desc}</p>
+          <div class="price">$${item.price}</div>
+        </div>
+        <div>${owned ? '<span style="font-size:11px;color:#556;">已安裝</span>' : `<button class="buy-btn" onclick="buyItem('${id}')">購買</button>`}</div>
+      `;
+      list.appendChild(div);
+    }
+  }
+
+  function buyItem(id) {
+    if (campState.money >= shopItems[id].price) {
+      campState.money -= shopItems[id].price;
+      campState.ownedItems.push(id);
+      showNotif(`🛠️ 改裝完成：${shopItems[id].name}`);
+      speakText('新裝備！太帥了！');
+      expressionSystem.setExpression('happy');
+      updateCampUI();
+    } else {
+      showNotif("❌ 資金不足！快去補給或清潔車輛！");
+      expressionSystem.setExpression('sad');
+    }
+  }
+
+  // ===== ALBUM =====
+  function renderAlbum() {
+    const grid = document.getElementById('photoGrid');
+    grid.innerHTML = '';
+    if (campState.visitedPlaces.length === 0) {
+      grid.innerHTML = '<div style="grid-column:span 3;text-align:center;padding:40px;color:#445;">尚無足跡，快去探索！</div>';
+      return;
+    }
+    campState.visitedPlaces.forEach(p => {
+      const div = document.createElement('div');
+      div.className = 'album-card';
+      div.innerHTML = `<div class="aicon">${p.icon}</div><div class="aname">${p.name}</div><div class="adate">${p.date}</div>`;
+      grid.appendChild(div);
+    });
+  }
+
+  // ===== UPDATE CAMP UI =====
+  function updateCampUI() {
+    document.getElementById('fuelCount').textContent = campState.fuel;
+    document.getElementById('moneyCount').textContent = campState.money;
+    document.getElementById('visitCount').textContent = campState.visitedPlaces.length;
+    document.getElementById('carStatus').textContent = campState.isTraveling ? '狀態：探索中...' : '狀態：停泊基地';
+    document.getElementById('travelBtn').disabled = campState.isTraveling;
+    let carName = 'MAZDA5：原廠式樣';
+    if (campState.ownedItems.includes('awning')) carName = 'MAZDA5：豪華連結帳';
+    else if (campState.ownedItems.includes('roofBox')) carName = 'MAZDA5：重裝書包';
+    document.getElementById('carDesc').textContent = carName;
+    renderShop();
+  }
+
+  // ===== RESET =====
+  function resetCampGame() {
+    if (confirm('確定重置所有露營進度嗎？')) {
+      campState = {
+        fuel: 0, money: 100, ownedItems: [], visitedPlaces: [],
+        isTraveling: false,
+        plots: Array(15).fill(0).map(() => ({ status: 0, time: null }))
+      };
+      document.getElementById('mazda5Car').classList.remove('away');
+      updateCampUI();
+      initSupplies();
+      renderAlbum();
+      showNotif('遊戲已重置！重新出發！');
+    }
+  }
+
+  // ===== SUPPLY TIMER =====
+  setInterval(() => {
+    let changed = false;
+    campState.plots.forEach(p => {
+      if (p.status === 1 && Date.now() - p.time > 10000) {
+        p.status = 2;
+        changed = true;
+      }
+    });
+    if (changed) initSupplies();
+  }, 1000);
+
+  // ======================================================
+  //  NOTIFICATION
+  // ======================================================
+  let notifTimer = null;
+  function showNotif(msg) {
+    const bar = document.getElementById('notifBar');
+    bar.textContent = msg;
+    bar.classList.add('show');
+    clearTimeout(notifTimer);
+    notifTimer = setTimeout(() => bar.classList.remove('show'), 2800);
+  }
+
+  // ======================================================
+  //  MEMORY SYSTEM
+  // ======================================================
+  const memorySystem = {
+    memories: JSON.parse(localStorage.getItem('chuhyi_memories') || '[]'),
+
+    add(text, type = 'conversation') {
+      const m = { id: Date.now(), text, type, timestamp: new Date().toISOString(), keywords: extractKeywords(text, 3) };
+      this.memories.unshift(m);
+      if (this.memories.length > 50) this.memories = this.memories.slice(0, 50);
+      this.save(); this.render();
+      return m;
+    },
+
+    findRelated(text) {
+      const kws = extractKeywords(text, 3);
+      if (!kws.length) return [];
+      return this.memories.filter(m => kws.some(k => m.text.includes(k) || m.keywords.includes(k))).slice(0, 3);
+    },
+
+    save() {
+      try { localStorage.setItem('chuhyi_memories', JSON.stringify(this.memories)); } catch(e) {}
+    },
+
+    render() {
+      const list = document.getElementById('memoryList');
+      if (!list) return;
+      if (!this.memories.length) { list.innerHTML = '<div style="font-size:11px;color:#556;">暫無記憶</div>'; return; }
+      list.innerHTML = this.memories.slice(0, 5).map(m => {
+        const t = new Date(m.timestamp).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+        return `<div class="mem-item">${m.text}<span class="ts">${t}</span></div>`;
+      }).join('');
+    },
+
+    export() {
+      const blob = new Blob([JSON.stringify({ memories: this.memories, date: new Date().toISOString() }, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `chuhyi_memory_${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      showNotif('記憶資料匯出成功！');
+    },
+
+    import(file) {
+      const r = new FileReader();
+      r.onload = e => {
+        try {
+          const data = JSON.parse(e.target.result);
+          if (data.memories && Array.isArray(data.memories)) {
+            this.memories = [...data.memories, ...this.memories].slice(0, 50);
+            this.save(); this.render();
+            showNotif('記憶資料匯入成功！');
+          }
+        } catch { showNotif('匯入失敗：格式不正確'); }
+      };
+      r.readAsText(file);
+    }
+  };
+
+  // ======================================================
+  //  EXPRESSION SYSTEM
+  // ======================================================
+  const expressionSystem = {
+    set(expr) {
+      const face = document.getElementById('faceCard');
+      const lb = document.getElementById('left-blush');
+      const rb = document.getElementById('right-blush');
+      face.classList.remove('expr-happy', 'expr-sad', 'expr-surprised', 'expr-angry');
+      lb.setAttribute('fill', '#ff8a4b');
+      rb.setAttribute('fill', '#ff8a4b');
+      switch(expr) {
+        case 'happy':
+          face.classList.add('expr-happy');
+          lb.setAttribute('opacity', '0.9'); rb.setAttribute('opacity', '0.9'); break;
+        case 'sad':
+          face.classList.add('expr-sad');
+          lb.setAttribute('opacity', '0.4'); rb.setAttribute('opacity', '0.4'); break;
+        case 'surprised':
+          face.classList.add('expr-surprised');
+          lb.setAttribute('opacity', '1'); rb.setAttribute('opacity', '1'); break;
+        case 'angry':
+          face.classList.add('expr-angry');
+          lb.setAttribute('fill', '#ff4444'); rb.setAttribute('fill', '#ff4444');
+          lb.setAttribute('opacity', '0.9'); rb.setAttribute('opacity', '0.9'); break;
+        default:
+          lb.setAttribute('opacity', '0.7'); rb.setAttribute('opacity', '0.7');
+      }
+      blushAnim();
+    },
+    setExpression(e) { this.set(e); } // alias
+  };
+
+  function blushAnim() {
+    const lb = document.getElementById('left-blush');
+    const rb = document.getElementById('right-blush');
+    lb.classList.remove('blush-anim'); rb.classList.remove('blush-anim');
+    void lb.offsetWidth;
+    lb.classList.add('blush-anim'); rb.classList.add('blush-anim');
+    setTimeout(() => { lb.classList.remove('blush-anim'); rb.classList.remove('blush-anim'); }, 1600);
+  }
+
+  // ======================================================
+  //  EYE TRACKING
+  // ======================================================
+  const lpupil = document.getElementById('lpupil');
+  const rpupil = document.getElementById('rpupil');
+
+  document.addEventListener('mousemove', e => {
+    if (!document.getElementById('eyeTracking').checked) return;
+    const svg = document.querySelector('#faceSvg');
+    const r = svg.getBoundingClientRect();
+    const mapP = (cx, cy) => {
+      const px = cx / 320 * r.width + r.left;
+      const py = cy / 200 * r.height + r.top;
+      const dx = e.clientX - px, dy = e.clientY - py;
+      const len = Math.sqrt(dx*dx+dy*dy);
+      const max = 9;
+      return { x: (len ? dx/len : 0) * Math.min(max, len), y: (len ? dy/len : 0) * Math.min(max, len) };
+    };
+    const l = mapP(95, 110), rp = mapP(225, 110);
+    lpupil.setAttribute('cx', 95 + l.x * 0.6);
+    lpupil.setAttribute('cy', 110 + l.y * 0.6);
+    rpupil.setAttribute('cx', 225 + rp.x * 0.6);
+    rpupil.setAttribute('cy', 110 + rp.y * 0.6);
+  });
+
+  // Device orientation
+  if (window.DeviceOrientationEvent) {
+    window.addEventListener('deviceorientation', e => {
+      if (!document.getElementById('eyeTracking').checked) return;
+      const g = Math.max(-90, Math.min(90, e.gamma || 0));
+      const offset = (g / 90) * 10;
+      lpupil.setAttribute('cx', 95 - offset);
+      rpupil.setAttribute('cx', 225 - offset);
+      const el = document.getElementById('orientStatus');
+      if (el) el.textContent = `${g.toFixed(1)}°`;
+    });
+  }
+
+  // ======================================================
+  //  SHAKE DETECTION
+  // ======================================================
+  let lastAcc = { x: null, y: null, z: null };
+  let isDizzy = false;
+
+  if (window.DeviceMotionEvent) {
+    window.addEventListener('devicemotion', e => {
+      if (!document.getElementById('shakeDetection').checked || isDizzy) return;
+      const a = e.accelerationIncludingGravity;
+      if (!a) return;
+      if (lastAcc.x !== null) {
+        const total = Math.abs(a.x - lastAcc.x) + Math.abs(a.y - lastAcc.y) + Math.abs(a.z - lastAcc.z);
+        if (total > 15) triggerDizzy();
+      }
+      lastAcc = { x: a.x, y: a.y, z: a.z };
+    });
+  }
+
+  function triggerDizzy() {
+    isDizzy = true;
+    showNotif('🌀 偵測到劇烈搖晃！頭好暈～');
+    speakText('好暈喔～不要再搖了！');
+    const le = document.getElementById('left-eye');
+    const re = document.getElementById('right-eye');
+    le.style.animation = 'dizzy-rotate 2s linear';
+    re.style.animation = 'dizzy-rotate 2s linear';
+    setTimeout(() => {
+      le.style.animation = '';
+      re.style.animation = '';
+      isDizzy = false;
+      expressionSystem.set('normal');
+    }, 2200);
+  }
+
+  // ======================================================
+  //  MOTION DETECTION (CAMERA)
+  // ======================================================
+  let cameraStream = null;
+  let motionActive = false;
+  let lastFrame = null;
+  let greetCooldown = 0;
+
+  async function startMotion() {
+    try {
+      cameraStream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240, facingMode: 'user' } });
+      const vid = document.getElementById('cameraVideo');
+      vid.srcObject = cameraStream;
+      document.getElementById('cameraOverlay').classList.add('active');
+      motionActive = true;
+      detectMotion();
+      showNotif('📷 動作偵測已啟動！對我揮揮手吧');
+      speakText('我可以看到你了！揮揮手吧！');
+      expressionSystem.set('surprised');
+    } catch {
+      showNotif('❌ 無法開啟相機，請檢查權限');
+    }
+  }
+
+  function stopMotion() {
+    if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
+    cameraStream = null;
+    document.getElementById('cameraOverlay').classList.remove('active');
+    motionActive = false;
+    lastFrame = null;
+    showNotif('相機已關閉');
+    speakText('動作偵測關閉了');
+    expressionSystem.set('normal');
+  }
+
+  function detectMotion() {
+    if (!motionActive) return;
+    const vid = document.getElementById('cameraVideo');
+    const cvs = document.getElementById('motionCanvas');
+    const ctx = cvs.getContext('2d');
+    cvs.width = vid.videoWidth || 320;
+    cvs.height = vid.videoHeight || 240;
+    ctx.drawImage(vid, 0, 0, cvs.width, cvs.height);
+    const frame = ctx.getImageData(0, 0, cvs.width, cvs.height);
+    if (lastFrame) {
+      let diff = 0;
+      for (let i = 0; i < frame.data.length; i += 4) {
+        diff += Math.abs(frame.data[i] - lastFrame.data[i])
+              + Math.abs(frame.data[i+1] - lastFrame.data[i+1])
+              + Math.abs(frame.data[i+2] - lastFrame.data[i+2]);
+      }
+      const motion = diff / (cvs.width * cvs.height * 3);
+      const lv = Math.min(100, Math.round(motion));
+      const el = document.getElementById('motionStatusEl');
+      if (el) el.textContent = lv + '%';
+      if (motion > 50 && greetCooldown <= 0) {
+        const msgs = ['嗨！看到你了！', '你好啊！', '哇！有人揮手！'];
+        const msg = msgs[Math.floor(Math.random() * msgs.length)];
+        showNotif('👋 ' + msg);
+        speakText(msg);
+        expressionSystem.set('surprised');
+        setTimeout(() => expressionSystem.set('normal'), 3000);
+        greetCooldown = 300;
+      }
+    }
+    lastFrame = frame;
+    greetCooldown = Math.max(0, greetCooldown - 1);
+    if (motionActive) requestAnimationFrame(detectMotion);
+  }
+
+  // ======================================================
+  //  SPEECH SYNTHESIS
+  // ======================================================
+  function speakText(text) {
+    if (!('speechSynthesis' in window)) return;
+    if (!document.getElementById('voiceFeedback').checked) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'zh-TW'; u.rate = 1.1; u.pitch = 1.4; u.volume = 0.9;
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length) {
+      const v = voices.find(v => v.lang === 'zh-TW') || voices.find(v => v.lang.startsWith('zh'));
+      if (v) u.voice = v;
+    }
+    window.speechSynthesis.speak(u);
+  }
+
+  // ======================================================
+  //  SPEECH RECOGNITION
+  // ======================================================
+  let recognition = null, recognizing = false;
+
+  if (window.SpeechRecognition || window.webkitSpeechRecognition) {
+    const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new Rec();
+    recognition.lang = 'zh-TW';
+    recognition.interimResults = true;
+    recognition.continuous = false;
+    recognition.onstart = () => {
+      recognizing = true;
+      document.getElementById('recStatus').textContent = '聆聽中…';
+      expressionSystem.set('surprised');
+    };
+    recognition.onend = () => {
+      recognizing = false;
+      document.getElementById('recStatus').textContent = '已停止';
+      expressionSystem.set('normal');
+    };
+    recognition.onerror = () => {
+      document.getElementById('recStatus').textContent = '辨識錯誤';
+      expressionSystem.set('sad');
+    };
+    let finalT = '';
+    recognition.onresult = ev => {
+      let interim = '';
+      for (let i = ev.resultIndex; i < ev.results.length; i++) {
+        const r = ev.results[i];
+        if (r.isFinal) finalT += r[0].transcript;
+        else interim += r[0].transcript;
+      }
+      document.getElementById('textIn').value = (finalT + interim).trim();
+    };
+  } else {
+    document.getElementById('recBtn').disabled = true;
+    document.getElementById('stopRecBtn').disabled = true;
+    document.getElementById('recStatus').textContent = '不支援';
+  }
+
+  document.getElementById('recBtn').onclick = () => {
+    if (!recognition) return;
+    finalT = '';
+    try { recognition.start(); } catch(e) {}
+  };
+  document.getElementById('stopRecBtn').onclick = () => { if (recognition) recognition.stop(); };
+
+  // ======================================================
+  //  KEYWORD EXTRACTION & SEND
+  // ======================================================
+  function extractKeywords(text, max = 3) {
+    if (!text) return [];
+    text = text.toLowerCase().replace(/[^\u4e00-\u9fff\w\s]/g, ' ');
+    const tokens = text.split(/\s+/).filter(Boolean);
+    const stop = new Set(['的','了','是','我','你','他','她','在','有','和','也','要','可以','嗎','呢','很','就','跟','給','都','還','為','到','今天','明天','請問']);
+    const counts = {};
+    tokens.forEach(t => { if (t.length > 1 && !stop.has(t)) counts[t] = (counts[t] || 0) + 1; });
+    return Object.keys(counts).sort((a,b) => counts[b]-counts[a]).slice(0, max);
+  }
+
+  function handleSend(raw) {
+    raw = (raw || '').trim();
+    if (!raw) { document.getElementById('robotReply').textContent = '請輸入或語音說一段話喔！'; return; }
+
+    // Special commands
+    if (raw.includes('現在幾點') || raw.includes('報時') || raw.includes('時間')) {
+      const t = new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      const reply = `現在時間是 ${t}`;
+      setReply(reply); speakText(reply); expressionSystem.set('normal'); return;
+    }
+    if (raw.includes('你好') || raw.includes('嗨') || raw.includes('您好')) {
+      const h = new Date().getHours();
+      const greet = h < 12 ? '早安' : h < 18 ? '午安' : '晚安';
+      const reply = `${greet}！我是你的好朋友 小藍，很高興見到你！`;
+      setReply(reply); speakText(reply); expressionSystem.set('happy'); return;
+    }
+    if (raw.includes('介紹') || raw.includes('你是誰') || raw.includes('功能')) {
+      const reply = '嗨！我是 小藍，智慧互動版！我可以追蹤眼球、偵測動作、幫你搜尋資料，還能陪你露營冒險！';
+      setReply(reply); speakText(reply); expressionSystem.set('happy'); return;
+    }
+    if (raw.includes('記憶') || raw.includes('記住') || raw.includes('記得')) {
+      memorySystem.add(raw, 'user_input');
+      const reply = '我記住你說的話了！';
+      setReply(reply); speakText(reply); expressionSystem.set('happy'); return;
+    }
+
+    // GPT redirect
+    if (/gpt|chatgpt|openai|問問ai/i.test(raw)) {
+      const q = raw.replace(/\s*(gpt|chatgpt|openai|ai|問問)\s*/gi, '').trim() || '你好';
+      setReply('好喔！幫你開啟 GPT！');
+      expressionSystem.set('surprised');
+      setTimeout(() => window.open('https://chat.openai.com/?q=' + encodeURIComponent(q), '_blank'), 800);
+      return;
+    }
+
+    // Memory recall
+    if (document.getElementById('memoryEnabled').checked) {
+      const rel = memorySystem.findRelated(raw);
+      if (rel.length) {
+        const extra = `\n\n📝 我記得你說過：「${rel[0].text}」`;
+        document.getElementById('robotReply').textContent = '讓我想想...' + extra;
+      }
+    }
+
+    // Keyword search
+    const keys = extractKeywords(raw, 4);
+    document.getElementById('keywordsRow').innerHTML = keys.map(k => `<span class="kw-tag">${k}</span>`).join('');
+
+    if (keys.length > 0) {
+      const q = keys.join(' ');
+      const reply = `我聽到了：${keys.join('、')}。幫你用關鍵字「${q}」搜尋！`;
+      setReply(reply); speakText(reply);
+      if (document.getElementById('memoryEnabled').checked) memorySystem.add(raw, 'conversation');
+      setTimeout(() => window.open('https://www.google.com/search?q=' + encodeURIComponent(q) + '&udm=50', '_blank'), 650);
+    } else {
+      const reply = '抱歉，我沒有找出明確的關鍵字，請說得再具體一些喔！';
+      setReply(reply); speakText(reply); expressionSystem.set('sad');
+    }
+  }
+
+  function setReply(text) {
+    const el = document.getElementById('robotReply');
+    el.textContent = text;
+    el.dataset.text = text;
+    blushAnim();
+  }
+
+  // Quick commands
+  document.querySelectorAll('.qcmd').forEach(btn => {
+    btn.onclick = () => {
+      const cmd = btn.dataset.cmd;
+      if (cmd === 'time') handleSend('現在幾點');
+      else if (cmd === 'greeting') handleSend('你好');
+      else if (cmd === 'intro') handleSend('介紹一下');
+      else if (cmd === 'chatgpt') { setReply('請告訴我你想問 GPT 的問題！'); speakText('請告訴我問題吧！'); document.getElementById('textIn').placeholder = '輸入你想問 GPT 的問題...'; }
+      else if (cmd === 'memory') { memorySystem.render(); setReply('這是你最近跟我說過的話！'); speakText('這是你的記憶喔！'); }
+    };
+  });
+
+  document.getElementById('sendBtn').onclick = () => { handleSend(document.getElementById('textIn').value); };
+  document.getElementById('textIn').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.ctrlKey) { e.preventDefault(); handleSend(document.getElementById('textIn').value); }
+  });
+  document.getElementById('speakBtn').onclick = () => {
+    const el = document.getElementById('robotReply');
+    speakText(el.dataset.text || el.textContent);
+  };
+  document.getElementById('clearBtn').onclick = () => {
+    document.getElementById('textIn').value = '';
+    document.getElementById('robotReply').textContent = '機器人等待使用者輸入...';
+    document.getElementById('keywordsRow').innerHTML = '';
+    expressionSystem.set('normal');
+  };
+
+  // Settings toggle
+  document.getElementById('settingsBtnMain').onclick = () => {
+    document.getElementById('settingsPanel').classList.toggle('active');
+  };
+
+  // Interaction bar
+  document.querySelectorAll('.ibtn').forEach(btn => {
+    btn.onclick = () => {
+      const a = btn.dataset.action;
+      if (a === 'motion') startMotion();
+      else if (a === 'stop') stopMotion();
+      else if (a === 'settings') document.getElementById('settingsPanel').classList.toggle('active');
+      else if (a === 'exportData') memorySystem.export();
+      else if (a === 'importData') document.getElementById('importFile').click();
+    };
+  });
+
+  document.getElementById('importFile').onchange = e => {
+    if (e.target.files.length) { memorySystem.import(e.target.files[0]); e.target.value = ''; }
+  };
+
+  document.getElementById('closeCamBtn').onclick = stopMotion;
+
+  // Fullscreen face toggle
+  document.getElementById('toggleFsBtn').onclick = () => {
+    document.getElementById('faceFullscreen').classList.add('active');
+  };
+  document.getElementById('closeFsBtn').onclick = () => {
+    document.getElementById('faceFullscreen').classList.remove('active');
+  };
+
+  // ======================================================
+  //  RANDOM EXPRESSION TIMER
+  // ======================================================
+  setInterval(() => {
+    if (Math.random() > 0.65) {
+      const exprs = ['happy', 'sad', 'surprised', 'normal'];
+      expressionSystem.set(exprs[Math.floor(Math.random() * exprs.length)]);
+      setTimeout(() => expressionSystem.set('normal'), 5000 + Math.random() * 8000);
+    }
+  }, 15000);
+
+  // Blush timer
+  setInterval(blushAnim, 8000);
+
+  // ======================================================
+  //  INIT
+  // ======================================================
+  initSupplies();
+  updateCampUI();
+  renderAlbum();
+  memorySystem.render();
+
+  setTimeout(() => {
+    showNotif('😊 小藍 全能工具已準備完成！');
+    expressionSystem.set('happy');
+    speakText('嗨！我是小藍，歡迎來到全能工具！可以和我聊天，也可以去露營冒險喔！');
+  }, 800);
+</script>
+</body>
+</html>
